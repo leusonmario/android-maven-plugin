@@ -51,22 +51,6 @@
 			 </execution>
 		    </executions>
 	       </plugin>
-	       <!-- enable JGit plugin -->
-	       <plugin>
-		    <groupId>ru.concerteza.buildnumber</groupId>
-		    <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-		    <version>1.2.9</version>
-		    <executions>
-			 <execution>
-			      <id>git-buildnumber</id>
-			      <goals>
-				   <goal>extract-buildnumber</goal>
-			      </goals>
-			      <!-- must execute before generate sources-->
-			      <phase>validate</phase>
-			 </execution>
-		    </executions>
-	       </plugin> 
 	       <plugin>
 		    <groupId>com.simpligility.maven.plugins</groupId>
 
@@ -77,59 +61,36 @@
 			 </sdk>
 			 <!-- inject our settings to BuildConfig.java here-->
 			 <buildConfigConstants>
-			      <buildConfigConstants>
+			      <buildConfigConstant>
 				   <name>Title</name>
 				   <value>${project.name}</value>
 				   <type>String</type>
-			      </buildConfigConstants>
-			      <buildConfigConstants>
+			      </buildConfigConstant>
+			      <buildConfigConstant>
 				   <name>Version</name>
 				   <value>${project.version}</value>
 				   <type>String</type>
-			      </buildConfigConstants>
-			      <buildConfigConstants>
+			      </buildConfigConstant>
+			      <buildConfigConstant>
 				   <name>Vendor</name>
 				   <value>${project.organization.name}</value>
 				   <type>String</type>
-			      </buildConfigConstants>
-			      <buildConfigConstants>
+			      </buildConfigConstant>
+			      <buildConfigConstant>
 				   <name>ArtifactId</name>
 				   <value>${project.groupId}.${project.artifactId}</value>
 				   <type>String</type>
-			      </buildConfigConstants>
-			      
-			      <buildConfigConstants>
-				   <name>GitRevision</name>
-				   <value>${git.revision}</value>
-				   <type>String</type>
-			      </buildConfigConstants>
-			      <buildConfigConstants>
-				   <name>GitBranch</name>
-				   <value>${git.branch}</value>
-				   <type>String</type>
-			      </buildConfigConstants>
-			      
-			      <buildConfigConstants>
-				   <name>GitTag</name>
-				   <value>${git.tag}</value>
-				   <type>String</type>
-			      </buildConfigConstants>
-
-			      <buildConfigConstants>
-				   <name>GitCommitCount</name>
-				   <value>${git.commitsCount}</value>
-				   <type>String</type>
-			      </buildConfigConstants>
-			      <buildConfigConstants>
+			      </buildConfigConstant>
+			      <buildConfigConstant>
 				   <name>BuiltOn</name>
 				   <value>${timestamp}</value>
 				   <type>String</type>
-			      </buildConfigConstants>
-			      <buildConfigConstants>
+			      </buildConfigConstant>
+			      <buildConfigConstant>
 				   <name>BuiltBy</name>
 				   <value>${user.name}</value>
 				   <type>String</type>
-			      </buildConfigConstants>
+			      </buildConfigConstant>
 			 </buildConfigConstants>
 		    </configuration>
 	       </plugin>

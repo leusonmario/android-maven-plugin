@@ -224,7 +224,7 @@ public class GenerateSourcesMojo extends AbstractAndroidMojo
     /**
      * <p>Parameter designed to generate custom BuildConfig constants
      */
-    @Parameter( property = "android.buildConfigConstants", readonly = true )
+    @Parameter( property = "android.buildConfigConstants" )
     protected BuildConfigConstant[] buildConfigConstants;
 
     /**
@@ -867,8 +867,8 @@ public class GenerateSourcesMojo extends AbstractAndroidMojo
                 .disablePngCrunching()
                 .generateRIntoPackage( customPackage )
                 .setPathToAndroidManifest( destinationManifestFile )
-                .addResourceDirectoryIfExists( resourceDirectory )
                 .addResourceDirectoriesIfExists( getResourceOverlayDirectories() )
+                .addResourceDirectoryIfExists( resourceDirectory )
                     // Need to include any AAR or APKLIB dependencies when generating R because if any local
                     // resources directly reference dependent resources then R generation will crash.
                 .addResourceDirectoriesIfExists( getLibraryResourceFolders() )
