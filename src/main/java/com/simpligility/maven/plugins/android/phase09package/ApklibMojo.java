@@ -185,42 +185,42 @@ public class ApklibMojo extends AbstractAndroidMojo
 
         try
         {
-            if ( nativeLibrariesDirectory.exists() )
-            {
-                getLog().info( nativeLibrariesDirectory + " exists, adding libraries." );
-                addDirectory( jarArchiver, nativeLibrariesDirectory, NATIVE_LIBRARIES_FOLDER );
-            }
-            else
-            {
-                getLog().info( nativeLibrariesDirectory
-                        + " does not exist, looking for libraries in target directory." );
-                // Add native libraries built and attached in this build
-                String[] ndkArchitectures = NativeHelper.getNdkArchitectures( ndkArchitecture,
-                                                                              applicationMakefile,
-                                                                              project.getBasedir() );
-                for ( String architecture : ndkArchitectures )
-                {
-                    final File ndkLibsDirectory = new File( ndkOutputDirectory, architecture );
-                    addSharedLibraries( jarArchiver, ndkLibsDirectory, architecture );
+            List<Artifact> attachedArtifacts = project.getAttachedArtifacts ();
 
-                    // Add native library dependencies
-                    // FIXME: Remove as causes duplicate libraries when building final APK if this set includes
-                    //        libraries from dependencies of the APKLIB
-                    //final File dependentLibs = new File( ndkOutputDirectory.getAbsolutePath(), ndkArchitecture );
-                    //addSharedLibraries( jarArchiver, dependentLibs, prefix );
+            for ( Artifact attachedArtifact : attachedArtifacts )
+            {
+                // We are interested in attaching so/a/har artifacts
+                if ( NativeHelper.isNativeArtifact ( attachedArtifact ) )
+                {
+                    // We dump all files into the archive now - good place to store the HAR archives too
+
+                    String architecture = NativeHelper.extractArchitectureFromArtifact ( attachedArtifact, "armeabi" );
+                    File libFile = null;
+                    String destination = null;
+
+                    if ( NativeHelper.isNativeBinary ( attachedArtifact ))
+                    {
+                        libFile = attachedArtifact.getFile ();
+                        destination = NATIVE_LIBRARIES_FOLDER + "/" + architecture + "/" + libFile.getName ();
+                    }
+                    else
+                    {
+                        // Is a HAR file
+
+                    }
+                    getLog().debug( "Adding " + libFile + " as " + destination );
+                    jarArchiver.addFile( libFile, destination );
                 }
             }
 
-            // Removing this as the APK is now able to pull the native libs from the chained apklibs
-            // get native libs from other apklibs
-//            for ( Artifact apkLibraryArtifact : getTransitiveDependencyArtifacts( APKLIB ) )
-//            {
-//                final File apklibLibsDirectory = getUnpackedLibNativesFolder( apkLibraryArtifact );
-//                if ( apklibLibsDirectory.exists() )
-//                {
-//                    addDirectory( jarArchiver, apklibLibsDirectory, NATIVE_LIBRARIES_FOLDER );
-//                }
-//            }
+
+            // As of this new version, we should only use the attached files
+            if ( true )
+            {
+                //
+            }
+
+
         }
         catch ( ArchiverException e )
         {

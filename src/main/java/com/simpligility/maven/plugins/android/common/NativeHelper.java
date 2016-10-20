@@ -146,6 +146,25 @@ public class NativeHelper
         return filteredArtifacts;
     }
 
+    public static boolean isNativeArtifact( Artifact artifact )
+    {
+        boolean isNativeArtifact = Const.ArtifactType.NATIVE_HEADER_ARCHIVE.equals ( artifact.getType () );
+
+        isNativeArtifact |= Const.ArtifactType.NATIVE_SYMBOL_OBJECT.equals ( artifact.getType () );
+        isNativeArtifact |= Const.ArtifactType.NATIVE_IMPLEMENTATION_ARCHIVE.equals ( artifact.getType () );
+
+        return isNativeArtifact;
+
+    }
+
+    public static boolean isNativeBinary( Artifact artifact )
+    {
+        boolean isNativeBinary = Const.ArtifactType.NATIVE_SYMBOL_OBJECT.equals ( artifact.getType () );
+        isNativeBinary |= Const.ArtifactType.NATIVE_IMPLEMENTATION_ARCHIVE.equals ( artifact.getType () );
+        return isNativeBinary;
+    }
+
+
     private boolean isNativeLibrary( boolean sharedLibraries, String artifactType )
     {
         return ( sharedLibraries
