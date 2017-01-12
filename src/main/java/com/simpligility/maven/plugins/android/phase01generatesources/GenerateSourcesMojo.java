@@ -16,9 +16,6 @@
  */
 package com.simpligility.maven.plugins.android.phase01generatesources;
 
-import com.android.manifmerger.ManifestMerger;
-import com.android.manifmerger.MergerLog;
-import com.android.utils.StdLogger;
 import com.simpligility.maven.plugins.android.AbstractAndroidMojo;
 import com.simpligility.maven.plugins.android.CommandExecutor;
 import com.simpligility.maven.plugins.android.ExecutionException;
@@ -320,8 +317,6 @@ public class GenerateSourcesMojo extends AbstractAndroidMojo
                     relativeApklibAidlFileNames.put( artifact.getId(), apklibAidlFiles );
                 }
             }
-
-            mergeManifests();
 
             checkPackagesForDuplicates();
             checkForConflictingLayouts();
@@ -1049,66 +1044,6 @@ public class GenerateSourcesMojo extends AbstractAndroidMojo
         catch ( ExecutionException e )
         {
             throw new MojoExecutionException( "", e );
-        }
-    }
-
-    /**
-     * @deprecated Use ManifestMerger v2 instead
-     * {@link com.simpligility.maven.plugins.android.standalonemojos.ManifestMergerMojo}
-     * @throws MojoExecutionException
-     */
-    @Deprecated
-    private void mergeManifests() throws MojoExecutionException
-    {
-        getLog().debug( "mergeManifests: " + mergeManifests );
-
-        if ( !mergeManifests )
-        {
-            getLog().debug( "Manifest merging disabled. Using project manifest only" );
-            return;
-        }
-
-        getLog().info( "Getting manifests of dependent apklibs" );
-        List<File> libManifests = new ArrayList<File>();
-        for ( Artifact artifact : getTransitiveDependencyArtifacts( APKLIB, AAR ) )
-        {
-            final File libManifest = new File( getUnpackedLibFolder( artifact ), "AndroidManifest.xml" );
-            if ( !libManifest.exists() )
-            {
-                throw new MojoExecutionException( artifact.getArtifactId() + " is missing AndroidManifest.xml" );
-            }
-
-            libManifests.add( libManifest );
-        }
-
-        if ( !libManifests.isEmpty() )
-        {
-            final File mergedManifest = new File( destinationManifestFile.getParent(), "AndroidManifest-merged.xml" );
-            final StdLogger stdLogger = new StdLogger( StdLogger.Level.VERBOSE );
-            final ManifestMerger merger = new ManifestMerger( MergerLog.wrapSdkLog( stdLogger ), null );
-
-            getLog().info( "Merging manifests of dependent apklibs" );
-
-            final boolean mergeSuccess = merger.process( mergedManifest, destinationManifestFile,
-                libManifests.toArray( new File[libManifests.size()] ),  null, null );
-
-            if ( mergeSuccess )
-            {
-                // Replace the original manifest file with the merged one so that
-                // the rest of the build will pick it up.
-                destinationManifestFile.delete();
-                mergedManifest.renameTo( destinationManifestFile );
-                getLog().info( "Done Merging Manifests of APKLIBs" );
-            }
-            else
-            {
-                getLog().error( "Manifests were not merged!" );
-                throw new MojoExecutionException( "Manifests were not merged!" );
-            }
-        }
-        else
-        {
-            getLog().info( "No APKLIB manifests found. Using project manifest only." );
         }
     }
 
