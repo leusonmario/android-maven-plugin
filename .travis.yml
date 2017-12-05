@@ -1,43 +1,25 @@
+
+sudo: required
 language: java
-jdk: oraclejdk7
-env:
-  matrix:
-    # android-16 is always included
-    - ANDROID_SDKS=sysimg-16            ANDROID_TARGET=android-16  ANDROID_ABI=x86
-before_install:
-  # Install base Android SDK
-  - sudo apt-get update -qq
-  - if [ `uname -m` = x86_64 ]; then sudo apt-get install -qq --force-yes libgd2-xpm ia32-libs ia32-libs-multiarch > /dev/null; fi
-  - wget http://dl.google.com/android/android-sdk_r21.1-linux.tgz
-  - tar xzf android-sdk_r21.1-linux.tgz
-  - export ANDROID_HOME=$PWD/android-sdk-linux
-  - export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
 
-  # Install required components.
-  # For a full list, run `android list sdk -a --extended`
-  # Note that sysimg-16 downloads the ARM, x86 and MIPS images (we should optimize this).
-  # Other relevant API's:
-  #  addon-google_apis-google-16
-  - android update sdk --filter platform-tools,android-16,extra-android-support,$ANDROID_SDKS --no-ui --force > /dev/null
+jdk:
+  - oraclejdk8
 
-  # Create and start emulator
-  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
-  - emulator -avd test -no-skin -no-audio -no-window &
+script:
+  - mvn clean cobertura:cobertura -Dtest=script#7 -DfailIfNoTests=false
 
-before_script:
-  - ./wait_for_emulator
+before_deploy:
+- tar -zcvf coverage-result.tar.gz /home/travis/build/leusonmario/android-maven-plugin/target/site/cobertura
 
-script: mvn install -Dandroid.device=test
+deploy:
+  provider: releases
+  api_key:
+    secure: "DHdE6EN3XSnYyZbHY/wYYOAcayOYGEMUI0004WP4w/F6xQgxJ3b/XgVnJMPp+RBB7H6I9uI9bjURIXC926E9VilauoXOPR4Rf6mvVd1TR32jM5vHa0Y6ugrGKPhLC4LWe6DVsI/KpaXrQhE1Jr6wUMGZFsx9w7LrYcuv+p4s3jD1vKJOTZCC6xtfCpUNmVJAfHl4zUJoOHfQHT02x6Z2oyX1yTbg6T5zrBgSkYieXBFMle68jflBjpygsRxPLL8xU7t8S4cY3UuaHt1geKpV+inQfeijo1CAcYqiqwpdTG4KCOk/Y/wxprdyYQi3vTBtR6iuyIGUJGhbPY82f7xVIjHKNSttv9UodRFFb+x5dmfTygLyY6fjJT0AVw80HDL8bwtpvLbDMX1Pm7kH0qEZmJ3wJGFrbdCyt+ANL6aD18SVl4W2C9BCnbK1CwCM0Ifukf97xPirK+HlWCoQWpHzXp4/40RRg2y8Q6bIToGBKPWJgusZsGLjZjogIEq4vE2TEUBVEpHixugqnZMzupF4G//k978rOUd2SK7caJrpEUFKMVU9DucAktAiX/CbmVgJTII7fNerU6mwdvr9n+Kt7yvs4p81+eV14H9K0zAja+458v25VHATrJOvcZvVJ6eaoi8FIVllOkZIcepvzJejmiKDHxtkBN1aZufK6C3S/Ps="
 
-after_script:
-  # Install Android NDK
-  - NDK_ARCH=""
-  - if [ `uname -m` = x86_64 ]; then NDK_ARCH=_64; fi
-  - wget http://dl.google.com/android/ndk/android-ndk-r8e-linux-x86${NDK_ARCH}.tar.bz2
-  - tar xjf android-ndk-r8e-linux-x86${NDK_ARCH}.tar.bz2
-  - export ANDROID_NDK_HOME=$PWD/android-ndk-r8e
 
-  # Run the samples.
-  - mkdir target
-  - git clone git://github.com/jayway/maven-android-plugin-samples.git target/maven-android-plugin-samples
-  - mvn install -B -f target/maven-android-plugin-samples/pom.xml -Dandroid.device=test
+  file: coverage-result.tar.gz
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
+  on:
+    tags: true
