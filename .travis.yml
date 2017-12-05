@@ -1,68 +1,25 @@
+
+sudo: required
 language: java
-jdk: oraclejdk7
-env:
-  matrix:
-    # android-19 is always included
-    - ANDROID_TARGET=android-19  ANDROID_ABI=armeabi-v7a
-before_install:
-  # Install base Android SDK
-  - sudo apt-get update -qq
-  # changed install to -q instead of -qq to expose any missing packages
-  - if [ `uname -m` = x86_64 ]; then sudo apt-get install -q --force-yes libgd2-xpm ia32-libs ia32-libs-multiarch > /dev/null; fi
-  - wget http://dl.google.com/android/android-sdk_r23.0.2-linux.tgz
-  - tar xzf android-sdk_r23.0.2-linux.tgz
-  - export ANDROID_HOME=$PWD/android-sdk-linux
-  - export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
 
-  # Maven 3.2.3
-  #- wget http://www.us.apache.org/dist/maven/maven-3/3.2.3/binaries/apache-maven-3.2.3-bin.tar.gz
-  #- tar xvf apache-maven-3.2.3-bin.tar.gz > /dev/null
-  #- export MVN_HOME=`pwd`/apache-maven-3.2.3
-  #- export PATH=${MVN_HOME}/bin/:${PATH}
-  #- mvn --version
+jdk:
+  - oraclejdk8
 
-  # Install required components.
-  # For a full list, run `android list sdk -a --extended`
-  # Note that sysimg-19 downloads the ARM, x86 and MIPS images (we should optimize this).
-  # Other relevant API's:
-  #  addon-google_apis-google-16
-  # removed > /dev/null to prevent Travis timing out and ease debugging
-  - echo y | android update sdk --filter tools,platform-tools --no-ui --force --all
-  - echo y | android update sdk --filter build-tools-19.0.3 --no-ui --force --all
-  - echo y | android update sdk --filter $ANDROID_TARGET --no-ui --force --all
-  - echo y | android update sdk --filter sys-img-$ANDROID_ABI-$ANDROID_TARGET --no-ui --force --all
+script:
+  - mvn clean cobertura:cobertura -Dtest=MorseflashSampleIT#buildDeployAndRun -DfailIfNoTests=false
 
-  # Create and start emulator
-  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
-  - emulator -avd test -no-skin -no-audio -no-window &
-  
-  # Install Android NDK 10c (not working so commented out for now)
-  # Note: There is now a difference between Target architecture and Platform architecture. What SHOULD they be?
-  #- NDK_ARCH=""
-  #- if [ `uname -m` = x86_64 ]; then NDK_ARCH=_64; fi
-  #- FILE="android-ndk-r10c-linux-x86${NDK_ARCH}.bin"
-  #- wget http://dl.google.com/android/ndk/${FILE}
-  #- chmod a+x ${FILE}
-  #- ./${FILE} > nul
-  #- export ANDROID_NDK_HOME=$PWD/android-ndk-r10c
-  
-   # Install Android NDK 10b
-  # Note: There is now a difference between Target architecture and Platform architecture. What SHOULD they be?
-  - NDK_ARCH=""
-  - NDK_PLAT="32"
-  - if [ `uname -m` = x86_64 ]; then NDK_ARCH=_64; NDK_PLAT=32; fi
-  - FILE="android-ndk${NDK_PLAT}-r10b-linux-x86${NDK_ARCH}.tar.bz2"
-  - wget http://dl.google.com/android/ndk/${FILE}
-  - tar xjf ${FILE}
-  - export ANDROID_NDK_HOME=$PWD/android-ndk-r10b
-  
-  
+before_deploy:
+- tar -zcvf coverage-result.tar.gz /home/travis/build/leusonmario/android-maven-plugin/target/site/cobertura
 
-# setting install to true to avoid unnecessary build
-install: true
+deploy:
+  provider: releases
+  api_key:
+    secure: "DHdE6EN3XSnYyZbHY/wYYOAcayOYGEMUI0004WP4w/F6xQgxJ3b/XgVnJMPp+RBB7H6I9uI9bjURIXC926E9VilauoXOPR4Rf6mvVd1TR32jM5vHa0Y6ugrGKPhLC4LWe6DVsI/KpaXrQhE1Jr6wUMGZFsx9w7LrYcuv+p4s3jD1vKJOTZCC6xtfCpUNmVJAfHl4zUJoOHfQHT02x6Z2oyX1yTbg6T5zrBgSkYieXBFMle68jflBjpygsRxPLL8xU7t8S4cY3UuaHt1geKpV+inQfeijo1CAcYqiqwpdTG4KCOk/Y/wxprdyYQi3vTBtR6iuyIGUJGhbPY82f7xVIjHKNSttv9UodRFFb+x5dmfTygLyY6fjJT0AVw80HDL8bwtpvLbDMX1Pm7kH0qEZmJ3wJGFrbdCyt+ANL6aD18SVl4W2C9BCnbK1CwCM0Ifukf97xPirK+HlWCoQWpHzXp4/40RRg2y8Q6bIToGBKPWJgusZsGLjZjogIEq4vE2TEUBVEpHixugqnZMzupF4G//k978rOUd2SK7caJrpEUFKMVU9DucAktAiX/CbmVgJTII7fNerU6mwdvr9n+Kt7yvs4p81+eV14H9K0zAja+458v25VHATrJOvcZvVJ6eaoi8FIVllOkZIcepvzJejmiKDHxtkBN1aZufK6C3S/Ps="
 
-before_script:
-  # Make sure the emulator is running.
-  - ./wait_for_emulator
 
-script: mvn clean install -Dandroid.device=test -P it
+  file: coverage-result.tar.gz
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
+  on:
+    tags: true
