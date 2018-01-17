@@ -1,55 +1,25 @@
+
+sudo: required
 language: java
-jdk: oraclejdk7
-env:
-  matrix:
-    # android-19 is always included
-    - ANDROID_TARGET=android-19  ANDROID_ABI=armeabi-v7a
-before_install:
-  # Install base Android SDK
-  - sudo apt-get update -qq
-  # changed install to -q instead of -qq to expose any missing packages
-  - if [ `uname -m` = x86_64 ]; then sudo apt-get install -q --force-yes libgd2-xpm ia32-libs ia32-libs-multiarch > /dev/null; fi
-  - wget http://dl.google.com/android/android-sdk_r23.0.2-linux.tgz
-  - tar xzf android-sdk_r23.0.2-linux.tgz
-  - export ANDROID_HOME=$PWD/android-sdk-linux
-  - export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
 
-  # Maven 3.1.1
-  - wget http://www.us.apache.org/dist/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz
-  - tar xvf apache-maven-3.1.1-bin.tar.gz > /dev/null
-  - export MVN_HOME=`pwd`/apache-maven-3.1.1
-  - export PATH=${MVN_HOME}/bin/:${PATH}
-  - mvn --version
+jdk:
+  - oraclejdk8
 
-  # Install required components.
-  # For a full list, run `android list sdk -a --extended`
-  # Note that sysimg-19 downloads the ARM, x86 and MIPS images (we should optimize this).
-  # Other relevant API's:
-  #  addon-google_apis-google-16
-  # removed > /dev/null to prevent Travis timing out and ease debugging
-  - echo y | android update sdk --filter tools,platform-tools --no-ui --force --all
-  - echo y | android update sdk --filter build-tools-19.0.3 --no-ui --force --all
-  - echo y | android update sdk --filter $ANDROID_TARGET --no-ui --force --all
-  - echo y | android update sdk --filter sys-img-$ANDROID_ABI-$ANDROID_TARGET --no-ui --force --all
+script:
+  - mvn clean cobertura:cobertura -Dtest=MorseflashSampleIT#buildDeployAndRun -DfailIfNoTests=false
 
-  # Create and start emulator
-  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
-  - emulator -avd test -no-skin -no-audio -no-window &
-  
-  # Install Android NDK
-  # Note: There is now a difference between Target architecture and Platform architecture. What SHOULD they be?
-  - NDK_ARCH=""  
-  - NDK_PLAT=""  
-  - if [ `uname -m` = x86_64 ]; then NDK_ARCH=_64; NDK_PLAT=64; fi
-  - FILE="android-ndk${NDK_PLAT}-r10b-linux-x86${NDK_ARCH}.tar.bz2"
-  - wget http://dl.google.com/android/ndk/${FILE}
-  - tar xjf ${FILE}
-  - export ANDROID_NDK_HOME=$PWD/android-ndk-r10b
+before_deploy:
+- tar -zcvf coverage-result.tar.gz /home/travis/build/leusonmario/android-maven-plugin/target/site/cobertura
 
-before_script:
-  # Make sure the emulator is running.
-  - ./wait_for_emulator
+deploy:
+  provider: releases
+  api_key:
+    secure: "bFX2kTucNkuLkVDpMXhTeQxpcwbt6e7gwbpiqMq/4T6E4OcJ9MjgWzsymMEeqB85ao8/D+7ZV3w+p9Jh1EDZty5oHYb8qj9EPCJ/+ow1jfuXXPxYhXI4OpEDdG2AA2FxewnkrgleCoOk2Y9O6wWVxKM8w765eNkc0aPNhf7+JGy46aWpd2sp7kcrLqmg+7HN3v20NFj3EkhIf4/IsHxprxFeFc5RNDkwXmXJgAQHngqdouhjPD3IFUBoiBW4tXq7I530N/0OYFIjjZNLS5RBbxOMxZaVgB90cNUrqTxyV4tMYqeUatwHlSXMEk8GRe76fPAMNjnoPkdEojR2jcJIwVE9WNvFTBa8BE4HGl+X+9NJQ0dc/RWwZUv6iW2JNeXGKDMC/I3y6B0YK9aQ+AtuesIfKBwL44FUSETYPyy04Y7Xucjar6Y2nrjPqJRsUyDtqCXzNaMAx/c+87GrIeN3QUvp6589lsnW7hD9/J9qmOR8p0d/aNoNZZtkMoo2xKoBzO5mql3voFiGv9o84ONU+2YreNtG6e74SvDF+TiGBLCTeCq+zpoEuD8omPQgSz2JDChgP7I7im2mZKdtqWCJOzsAYkBP6mjWV5zV2bMrLbb1vcES8fJt5qVX4uZ+DKa+ndgwx0c9AsXz4SXzPIB7fFfPNgdHhuG6bGwlmUQWErw="
 
-script: mvn clean install -Dandroid.device=test -P it
 
-after_script:
+  file: coverage-result.tar.gz
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
+  on:
+    tags: true
